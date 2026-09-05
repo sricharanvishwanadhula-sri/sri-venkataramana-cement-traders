@@ -1,0 +1,37 @@
+{
+  "summary": "Production-readiness scan for Sri Venkataramana Cement Traders — Sprint 1 pickup alignment. 47/47 backend pytest passing: 24/24 previous regression suite + 23/23 new prod-readiness tests covering security/data exposure (no wholesale/threshold in public /products, no admin email/JWT in /settings/public), math accuracy (50 bags OPC UltraTech -> subtotal 21000, hamali 200, GST 5880, total 27080; 33 bags advance rounding 25/50/100 sums correctly; TMT 2t hamali 600; sand=0), product-level hamali override wins over category default (fixed 100 vs per_bag 4*50=200) and restores on inherit, XSS payload stored as text (frontend must escape — verified React escapes text nodes by default), atomic concurrent decrement (5 parallel orders on stock=1 -> exactly 1 success, 4x 409), full order lifecycle Pending->AdvanceReceived(auto-flip on verified)->ReadyForPickup->Completed with invalid status rejected 400, WhatsApp deeplink URL-encoded with order code+total+advance, /orders/{code} 404 for unknown, /orders/track empty phone 400, POST /orders missing name -> 422, empty items -> 400, advance 99 -> 400, wrong password/no token/invalid token -> 401, no /api/meetings or /api/book-meeting (both 404), /api/products responds in <1.5s. Frontend smoke on desktop+mobile 390: /, /catalog (7 product cards), /track, /order/SVCT-NOEXIST (shows 'not found'), /admin login successful landing on /admin/dashboard, mobile hamburger present, no nav links to book-meeting.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Cart drawer (SheetContent) & mobile Header menu", "issues": ["Radix a11y warning persists from iteration-1: DialogContent missing DialogTitle. Add VisuallyHidden DialogTitle. Non-blocking."]},
+      {"screen": "Catalog seed data", "issues": ["Two products (PPC Cement + 20mm Blue Metal Aggregate) reuse the same Unsplash image URL photo-1621189914379-25b09149c5e6. Cosmetic."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/backend/tests/production_readiness_test.py",
+    "/app/test_reports/pytest/prod_readiness.xml"
+  ],
+  "action_items": [
+    "None blocking for production. Optional cosmetic: add VisuallyHidden DialogTitle to CartDrawer.jsx & Header.jsx Sheet; replace duplicate seed image for 20mm Blue Metal Aggregate.",
+    "Optional hardening: tighten CORS_ORIGINS from '*' to explicit domains in production (currently '*' with allow_credentials=True — browsers ignore credentials but still a lint smell)."
+  ],
+  "critical_code_review_comments": [
+    "server.py = 1174 lines — split into routers/models/services/seed modules (backlog, not blocking).",
+    "CORS_ORIGINS='*' with allow_credentials=True is a latent misconfig; browsers reject credentialed CORS with wildcard. Set explicit origins in prod .env.",
+    "Stock decrement path is correct (conditional $inc with $gte + rollback on failure) — concurrency test confirms exactly-one success under 5-way race.",
+    "Legacy /api/meetings and /api/book-meeting endpoints are fully removed (404); db.meetings dropped on startup as belt-and-suspenders.",
+    "OrderCreate uses default Pydantic extra='ignore'; unknown fields like delivery_address are silently dropped (verified not persisted). Consider extra='forbid' if strict schema desired.",
+    "Public settings and public products verified free of secrets/wholesale — no server-side leaks."
+  ],
+  "updated_files": ["/app/backend/tests/production_readiness_test.py"],
+  "success_rate": {"backend": "100% (47/47)", "frontend": "100% smoke"},
+  "test_credentials": "Admin: sricharanvishwanadhula@gmail.com / Admin@12345 (verified)",
+  "seed_data_creation": "All test artifacts TEST_ prefixed and cleaned up in-test (finally blocks + admin DELETE). Temporary hamali override on OPC 53 is restored to null within the same test.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Two pytest files now live under /app/backend/tests/: backend_test.py (regression, 24) and production_readiness_test.py (edge/security/math/concurrency, 23). Both pass cleanly under pytest-xdist parallel. Admin creds in /app/memory/test_credentials.md. If future changes touch orders/products, rerun both. For UPI verified-only rotation E2E, a fully deterministic test would require seeding orders with distinct assigned_upi_id + payment.verified=true and small limits — deferred as backlog because /admin/orders lacks a direct 'set verified & assigned_upi_id' seed endpoint; the existing test_admin_verify_flips_status already covers the auto-flip path.",
+  "rca of the issue": "No production-blocking bugs found. All Sprint-1 acceptance criteria hold under edge/security/concurrency scrutiny. Ship-ready."
+}
