@@ -1,0 +1,197 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@700;800;900&family=Noto+Sans+Telugu:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --bg: #F8FAFC;
+    --card: #FFFFFF;
+    --slate-900: #0F172A;
+    --slate-800: #1E293B;
+    --slate-700: #334155;
+    --slate-500: #64748B;
+    --slate-400: #94A3B8;
+    --slate-200: #E2E8F0;
+    --amber-600: #D97706;
+    --amber-700: #B45309;
+    --amber-100: #FEF3C7;
+    --amber-50: #FFFBEB;
+}
+
+body {
+    margin: 0;
+    font-family: 'Plus Jakarta Sans', 'Noto Sans Telugu', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--slate-900);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.font-heading { font-family: 'Outfit', 'Noto Sans Telugu', sans-serif; }
+.font-condensed { font-family: 'Barlow Condensed', 'Noto Sans Telugu', sans-serif; letter-spacing: 0.02em; }
+.font-mono-price { font-family: 'JetBrains Mono', monospace; }
+
+html[lang="te"] body,
+html[lang="te"] .font-heading,
+html[lang="te"] .font-condensed {
+    font-family: 'Noto Sans Telugu', 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0;
+}
+
+@layer base {
+    :root {
+        --background: 210 40% 98%;
+        --foreground: 222 47% 11%;
+        --card: 0 0% 100%;
+        --card-foreground: 222 47% 11%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222 47% 11%;
+        --primary: 25 95% 44%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 210 40% 96%;
+        --secondary-foreground: 222 47% 11%;
+        --muted: 210 40% 96%;
+        --muted-foreground: 215 20% 45%;
+        --accent: 210 40% 96%;
+        --accent-foreground: 222 47% 11%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 215 24% 90%;
+        --input: 215 24% 90%;
+        --ring: 25 95% 44%;
+        --radius: 0.5rem;
+        --chart-1: 25 95% 44%;
+        --chart-2: 173 58% 39%;
+        --chart-3: 222 47% 11%;
+        --chart-4: 43 74% 66%;
+        --chart-5: 27 87% 67%;
+    }
+    .dark {
+        --background: 222 47% 11%;
+        --foreground: 210 40% 98%;
+        --card: 217 33% 17%;
+        --card-foreground: 210 40% 98%;
+        --popover: 217 33% 17%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 25 95% 53%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 217 33% 17%;
+        --secondary-foreground: 210 40% 98%;
+        --muted: 217 33% 17%;
+        --muted-foreground: 215 20% 65%;
+        --accent: 217 33% 17%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 63% 40%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 217 33% 22%;
+        --input: 217 33% 22%;
+        --ring: 25 95% 53%;
+    }
+}
+
+@layer base {
+    * { @apply border-border; }
+    body { @apply bg-background text-foreground; }
+}
+
+/* Custom Utilities */
+.grain-overlay {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity: 0.08;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+}
+
+.industrial-stripe {
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 12px,
+        rgba(217, 119, 6, 0.08) 12px,
+        rgba(217, 119, 6, 0.08) 24px
+    );
+}
+
+.hero-vignette {
+    background: linear-gradient(120deg, rgba(15,23,42,0.92) 0%, rgba(15,23,42,0.78) 55%, rgba(15,23,42,0.55) 100%);
+}
+
+.product-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    overflow: hidden;
+}
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -20px rgba(15, 23, 42, 0.25);
+    border-color: #D97706;
+}
+
+.badge-stock {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.badge-in-stock { background: #DCFCE7; color: #166534; }
+.badge-low-stock { background: #FFEDD5; color: #9A3412; }
+.badge-out-stock { background: #FEE2E2; color: #991B1B; }
+
+.btn-amber {
+    background: #D97706;
+    color: white;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+.btn-amber:hover { background: #B45309; }
+.btn-amber:active { transform: translateY(1px); }
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #F1F5F9;
+    color: #334155;
+    border: 1px solid #E2E8F0;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.chip:hover { border-color: #D97706; color: #D97706; }
+.chip-active { background: #0F172A; color: white; border-color: #0F172A; }
+
+.dashboard-stat {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #E2E8F0;
+    position: relative;
+    overflow: hidden;
+}
+.dashboard-stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: #D97706;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #F1F5F9; }
+::-webkit-scrollbar-thumb { background: #94A3B8; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #64748B; }
+
+::selection { background: #D97706; color: white; }
