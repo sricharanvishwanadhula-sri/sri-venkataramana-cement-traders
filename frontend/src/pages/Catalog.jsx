@@ -11,21 +11,17 @@ import { useLang } from "@/context/LanguageContext";
 export default function Catalog() {
   const { t } = useLang();
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [category, setCategory] = useState("All");
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const CATEGORIES = [
-    { value: "All", label: t("cat_all") },
-    { value: "Cement Bags", label: t("cat_cement") },
-    { value: "TMT Steel Rods", label: t("cat_steel") },
-    { value: "Sand & Aggregates", label: t("cat_aggregates") },
-    { value: "Binding Wire & Accessories", label: t("cat_wire") },
-  ];
-
   useEffect(() => {
     setLoading(true);
-    api.get("/products").then((r) => setProducts(r.data)).finally(() => setLoading(false));
+    Promise.all([
+      api.get("/products").then((r) => setProducts(r.data)),
+      api.get("/categories").then((r) => setCategories(r.data)).catch(() => {}),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {
@@ -35,6 +31,8 @@ export default function Catalog() {
       return true;
     });
   }, [products, category, q]);
+
+  const allCats = [{ name: "All", label: t("cat_all") }, ...categories.map((c) => ({ name: c.name, label: c.name }))];
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]" data-testid="catalog-page">
@@ -68,12 +66,12 @@ export default function Catalog() {
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-3 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0" data-testid="category-tabs">
-          {CATEGORIES.map((c) => (
+          {allCats.map((c) => (
             <button
-              key={c.value}
-              onClick={() => setCategory(c.value)}
-              className={`chip ${category === c.value ? "chip-active" : ""}`}
-              data-testid={`category-${c.value.toLowerCase().replace(/[^a-z]+/g, "-")}`}
+              key={c.name}
+              onClick={() => setCategory(c.name)}
+              className={`chip ${category === c.name ? "chip-active" : ""}`}
+              data-testid={`category-${c.name.toLowerCase().replace(/[^a-z]+/g, "-")}`}
             >
               {c.label}
             </button>

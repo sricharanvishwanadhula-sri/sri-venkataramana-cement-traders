@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Menu, Phone, Languages } from "lucide-react";
+import { ShoppingCart, Menu, Phone, Languages, Package } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useLang } from "@/context/LanguageContext";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
 const WHATSAPP = "919440828759";
 
@@ -14,7 +15,7 @@ export default function Header() {
   const navLinks = [
     { to: "/", label: t("home"), key: "home" },
     { to: "/catalog", label: t("catalog"), key: "catalog" },
-    { to: "/book-meeting", label: t("book_meeting"), key: "book-meeting" },
+    { to: "/track", label: t("track_order"), key: "track-order" },
   ];
 
   return (
@@ -47,11 +48,9 @@ export default function Header() {
             </Link>
           ))}
           <a
-            href={`https://wa.me/${WHATSAPP}`}
-            target="_blank"
-            rel="noreferrer"
+            href={`tel:+${WHATSAPP}`}
             className="flex items-center gap-2 text-slate-300 hover:text-[#D97706] font-semibold text-sm"
-            data-testid="header-whatsapp"
+            data-testid="header-call"
           >
             <Phone className="w-4 h-4" /> +91 94408 28759
           </a>
@@ -91,6 +90,10 @@ export default function Header() {
               </button>
             </SheetTrigger>
             <SheetContent side="right" className="bg-[#0F172A] border-l-[#334155] w-72">
+              <VisuallyHidden.Root>
+                <SheetTitle>Navigation</SheetTitle>
+                <SheetDescription>Mobile navigation menu.</SheetDescription>
+              </VisuallyHidden.Root>
               <div className="mt-8 space-y-1">
                 {navLinks.map((l) => (
                   <button
@@ -103,12 +106,10 @@ export default function Header() {
                   </button>
                 ))}
                 <a
-                  href={`https://wa.me/${WHATSAPP}`}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={`tel:+${WHATSAPP}`}
                   className="block py-3 px-3 text-[#D97706] hover:bg-[#1E293B] rounded-md font-semibold text-sm"
                 >
-                  {t("whatsapp_us")}
+                  {t("call_shop")}
                 </a>
                 <button
                   onClick={() => nav("/admin")}

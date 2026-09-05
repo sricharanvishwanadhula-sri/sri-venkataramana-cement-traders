@@ -25,8 +25,9 @@ export default function Footer() {
         <div>
           <h4 className="font-heading font-bold uppercase text-white mb-4 text-sm tracking-widest">{t("quick_links")}</h4>
           <ul className="space-y-2 text-sm">
-            <li><Link to="/catalog" className="hover:text-[#D97706]">{t("product_catalog_link")}</Link></li>
-            <li><Link to="/book-meeting" className="hover:text-[#D97706]">{t("book_meeting_link")}</Link></li>
+            <li><Link to="/catalog" className="hover:text-[#D97706]" data-testid="footer-catalog-link">{t("product_catalog_link")}</Link></li>
+            <li><Link to="/track" className="hover:text-[#D97706]" data-testid="footer-track-link">{t("track_order_link")}</Link></li>
+            <li><Link to="/quick-order" className="hover:text-[#D97706]" data-testid="footer-quick-order-link">{t("quick_order_link")}</Link></li>
             <li><a href="https://wa.me/919440828759" target="_blank" rel="noreferrer" className="hover:text-[#D97706]">{t("order_via_whatsapp")}</a></li>
             <li><Link to="/admin" className="hover:text-[#D97706] text-xs uppercase tracking-widest text-slate-500" data-testid="footer-admin-link">{t("admin_login")}</Link></li>
           </ul>
@@ -37,7 +38,7 @@ export default function Footer() {
           <ul className="space-y-3 text-sm">
             <li className="flex items-start gap-2">
               <Phone className="w-4 h-4 text-[#D97706] mt-0.5" />
-              <span>+91 94408 28759</span>
+              <a href="tel:+919440828759" className="hover:text-[#D97706]">+91 94408 28759</a>
             </li>
             <li className="flex items-start gap-2">
               <MessageCircle className="w-4 h-4 text-[#D97706] mt-0.5" />

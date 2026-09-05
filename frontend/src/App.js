@@ -4,7 +4,9 @@ import { CartProvider } from "@/context/CartContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import Home from "@/pages/Home";
 import Catalog from "@/pages/Catalog";
-import BookMeeting from "@/pages/BookMeeting";
+import TrackOrder from "@/pages/TrackOrder";
+import OrderConfirmation from "@/pages/OrderConfirmation";
+import QuickOrder from "@/pages/QuickOrder";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import "@/App.css";
@@ -18,7 +20,9 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/catalog" element={<Catalog />} />
-            <Route path="/book-meeting" element={<BookMeeting />} />
+            <Route path="/track" element={<TrackOrder />} />
+            <Route path="/order/:code" element={<OrderConfirmation />} />
+            <Route path="/quick-order" element={<QuickOrder />} />
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Routes>
