@@ -6,8 +6,8 @@ import requests
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://build-materials-pro-7.preview.emergentagent.com').rstrip('/')
 API = f"{BASE_URL}/api"
 
-ADMIN_EMAIL = "sricharanvishwanadhula@gmail.com"
-ADMIN_PASSWORD = "Admin@12345"
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'sricharanvishwanadhula@gmail.com')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Admin@12345')
 
 
 @pytest.fixture(scope="session")
@@ -156,8 +156,16 @@ class TestOrders:
         assert codes == sorted(codes, reverse=True)
 
     def test_get_by_order_code_uppercase(self, s):
-        order = list(TestOrders._created_order.values())[0]
-        code = order["order_code"]
+        # Self-contained: create an order then look it up (parametrize + xdist made class state fragile)
+        prods = s.get(f"{API}/products").json()
+        cement = next(p for p in prods if p["category"] == "Cement Bags")
+        brand = cement["brands"][0]
+        create = s.post(f"{API}/orders", json={
+            "customer_name": "TEST_Lookup", "customer_phone": "9998887777",
+            "items": [{"product_id": cement["id"], "brand_id": brand["id"], "quantity": 1}],
+            "advance_percent": 50,
+        }).json()
+        code = create["order"]["order_code"]
         r = s.get(f"{API}/orders/{code.lower()}")
         assert r.status_code == 200
         assert r.json()["order_code"] == code

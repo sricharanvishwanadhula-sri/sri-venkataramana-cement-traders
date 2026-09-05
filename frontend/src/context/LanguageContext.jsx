@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 const dict = {
   en: {
@@ -317,14 +317,12 @@ export function LanguageProvider({ children }) {
     }
   }, [lang]);
 
-  const t = (key) => dict[lang]?.[key] || dict.en[key] || key;
-  const toggle = () => setLang((l) => (l === "en" ? "te" : "en"));
+  const t = useCallback((key) => dict[lang]?.[key] || dict.en[key] || key, [lang]);
+  const toggle = useCallback(() => setLang((l) => (l === "en" ? "te" : "en")), []);
 
-  return (
-    <LanguageContext.Provider value={{ lang, setLang, toggle, t }}>
-      {children}
-    </LanguageContext.Provider>
-  );
+  const value = useMemo(() => ({ lang, setLang, toggle, t }), [lang, toggle, t]);
+
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
 export const useLang = () => useContext(LanguageContext);

@@ -164,7 +164,7 @@ export default function CartDrawer() {
                 <>
                   {items.map((it, idx) => (
                     <div
-                      key={idx}
+                      key={it.key || `${it.product_id}::${it.brand_id}`}
                       className="flex gap-3 border-b pb-4"
                       data-testid={`cart-item-${idx}`}
                     >
@@ -218,8 +218,8 @@ export default function CartDrawer() {
                   {quote?.insufficient?.length > 0 && (
                     <div className="bg-red-50 border border-red-200 rounded p-3 text-xs text-red-700" data-testid="cart-insufficient">
                       <p className="font-semibold mb-1">{t("insufficient_stock")}:</p>
-                      {quote.insufficient.map((r, i) => (
-                        <div key={i}>• {r.product_title} ({r.brand_name}) — {t("max_available")}: {r.available}</div>
+                      {quote.insufficient.map((r) => (
+                        <div key={`${r.product_id}::${r.brand_name}`}>• {r.product_title} ({r.brand_name}) — {t("max_available")}: {r.available}</div>
                       ))}
                     </div>
                   )}

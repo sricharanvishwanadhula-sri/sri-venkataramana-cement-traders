@@ -729,7 +729,7 @@ async def create_upi(payload: UpiCreate, admin=Depends(get_current_admin)):
 @api_router.patch("/admin/upi/{upi_id}", response_model=UpiAccount)
 async def update_upi(upi_id: str, payload: UpiUpdate, admin=Depends(get_current_admin)):
     data = payload.model_dump(exclude_unset=True)
-    if data.get("manual_active") is True:
+    if data.get("manual_active") == True:  # noqa: E712 – explicit True singleton, not truthy
         await db.upi_accounts.update_many({}, {"$set": {"manual_active": False}})
     r = await db.upi_accounts.update_one({"id": upi_id}, {"$set": data})
     if r.matched_count == 0:

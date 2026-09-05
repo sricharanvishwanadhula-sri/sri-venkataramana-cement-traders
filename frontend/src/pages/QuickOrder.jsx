@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -12,11 +12,14 @@ import { toast } from "sonner";
 import api, { formatINR, formatApiError } from "@/lib/api";
 import { useLang } from "@/context/LanguageContext";
 
+let _rowSeq = 0;
+const newRow = () => ({ key: `row-${++_rowSeq}`, product_id: "", brand_id: "", quantity: 1 });
+
 export default function QuickOrder() {
   const { t } = useLang();
   const nav = useNavigate();
   const [products, setProducts] = useState([]);
-  const [rows, setRows] = useState([{ product_id: "", brand_id: "", quantity: 1 }]);
+  const [rows, setRows] = useState(() => [newRow()]);
   const [advance, setAdvance] = useState(50);
   const [details, setDetails] = useState({ customer_name: "", customer_phone: "", notes: "" });
   const [quote, setQuote] = useState(null);
@@ -26,7 +29,10 @@ export default function QuickOrder() {
     api.get("/products").then((r) => setProducts(r.data));
   }, []);
 
-  const validRows = rows.filter((r) => r.product_id && r.brand_id && Number(r.quantity) > 0);
+  const validRows = useMemo(
+    () => rows.filter((r) => r.product_id && r.brand_id && Number(r.quantity) > 0),
+    [rows],
+  );
 
   useEffect(() => {
     if (validRows.length === 0) { setQuote(null); return; }
@@ -34,11 +40,11 @@ export default function QuickOrder() {
       items: validRows.map((r) => ({ product_id: r.product_id, brand_id: r.brand_id, quantity: Number(r.quantity) })),
       advance_percent: advance,
     }).then((r) => setQuote(r.data)).catch(() => setQuote(null));
-  }, [JSON.stringify(validRows), advance]);
+  }, [validRows, advance]);
 
-  const updateRow = (i, patch) => setRows((rs) => rs.map((r, idx) => idx === i ? { ...r, ...patch } : r));
-  const addRow = () => setRows((rs) => [...rs, { product_id: "", brand_id: "", quantity: 1 }]);
-  const removeRow = (i) => setRows((rs) => rs.filter((_, idx) => idx !== i));
+  const updateRow = (key, patch) => setRows((rs) => rs.map((r) => r.key === key ? { ...r, ...patch } : r));
+  const addRow = () => setRows((rs) => [...rs, newRow()]);
+  const removeRow = (key) => setRows((rs) => rs.filter((r) => r.key !== key));
 
   const submit = async () => {
     if (!details.customer_name.trim() || !details.customer_phone.trim()) {
@@ -91,27 +97,27 @@ export default function QuickOrder() {
             const prod = products.find((p) => p.id === r.product_id);
             const brands = prod?.brands || [];
             return (
-              <div key={i} className="grid grid-cols-12 gap-2 items-end bg-slate-50 p-2 rounded" data-testid={`quick-row-${i}`}>
+              <div key={r.key} className="grid grid-cols-12 gap-2 items-end bg-slate-50 p-2 rounded" data-testid={`quick-row-${i}`}>
                 <div className="col-span-5">
                   <Label className="text-[10px] uppercase text-slate-500 font-bold">{t("product_label")}</Label>
-                  <Select value={r.product_id} onValueChange={(v) => updateRow(i, { product_id: v, brand_id: "" })}>
+                  <Select value={r.product_id} onValueChange={(v) => updateRow(r.key, { product_id: v, brand_id: "" })}>
                     <SelectTrigger className="h-9" data-testid={`quick-product-${i}`}><SelectValue placeholder={t("select_product")} /></SelectTrigger>
                     <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="col-span-4">
                   <Label className="text-[10px] uppercase text-slate-500 font-bold">{t("brand")}</Label>
-                  <Select value={r.brand_id} onValueChange={(v) => updateRow(i, { brand_id: v })} disabled={!prod}>
+                  <Select value={r.brand_id} onValueChange={(v) => updateRow(r.key, { brand_id: v })} disabled={!prod}>
                     <SelectTrigger className="h-9" data-testid={`quick-brand-${i}`}><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>{brands.map((b) => <SelectItem key={b.id} value={b.id}>{b.name} · {formatINR(b.price)}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="col-span-2">
                   <Label className="text-[10px] uppercase text-slate-500 font-bold">{t("qty")}</Label>
-                  <Input type="number" min="1" value={r.quantity} onChange={(e) => updateRow(i, { quantity: e.target.value })} className="h-9" data-testid={`quick-qty-${i}`} />
+                  <Input type="number" min="1" value={r.quantity} onChange={(e) => updateRow(r.key, { quantity: e.target.value })} className="h-9" data-testid={`quick-qty-${i}`} />
                 </div>
                 <div className="col-span-1">
-                  <button className="w-9 h-9 text-red-600 hover:bg-red-50 rounded flex items-center justify-center" onClick={() => removeRow(i)} data-testid={`quick-remove-${i}`}>
+                  <button className="w-9 h-9 text-red-600 hover:bg-red-50 rounded flex items-center justify-center" onClick={() => removeRow(r.key)} data-testid={`quick-remove-${i}`}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
