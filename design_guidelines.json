@@ -1,0 +1,137 @@
+{
+  "project_name": "Sri Venkataramana Cement Traders",
+  "app_type": "hybrid_fullstack",
+  "business_info": {
+    "name": "Sri Venkataramana Cement Traders",
+    "phone_whatsapp": "+91 9440828759",
+    "whatsapp_link": "https://wa.me/919440828759",
+    "address": "D.No. 4-12, Main Road, Near APGVB Bank, Industrial Area, Andhra Pradesh",
+    "tagline": "Direct Factory Supplier for Premium Cement & TMT Steel Rods"
+  },
+  "design_archetype": {
+    "name": "THE PERFORMANCE INDUSTRIAL TRADER",
+    "description": "A sturdy, high-contrast, trustworthy B2B & retail construction material trading aesthetic. Combines gunmetal slate structure, concrete off-white surfaces, and high-visibility industrial amber/gold accents to deliver immediate authority and effortless mobile-first ordering.",
+    "anti_patterns_avoided": [
+      "No generic AI purple/violet gradients",
+      "No flimsy thin borders or low contrast text on dark backgrounds",
+      "No centered paragraph blocks",
+      "No placeholder images (via.placeholder.com)",
+      "No generic Inter/Roboto default headings"
+    ]
+  },
+  "colors": {
+    "primary": {
+      "main": "#D97706",
+      "hover": "#B45309",
+      "light": "#FEF3C7",
+      "dark": "#92400E",
+      "label": "Industrial Amber Gold"
+    },
+    "secondary": {
+      "main": "#0F172A",
+      "surface": "#1E293B",
+      "border": "#334155",
+      "label": "Gunmetal Slate"
+    },
+    "accent": {
+      "terracotta": "#C2410C",
+      "iron": "#475569",
+      "emerald": "#15803D",
+      "label": "Safety Accent Tokens"
+    },
+    "neutral": {
+      "bg_light": "#F8FAFC",
+      "card_bg": "#FFFFFF",
+      "border_light": "#E2E8F0",
+      "text_dark": "#0F172A",
+      "text_muted": "#475569",
+      "text_light": "#94A3B8"
+    },
+    "status": {
+      "in_stock": "#166534",
+      "in_stock_bg": "#DCFCE7",
+      "low_stock": "#9A3412",
+      "low_stock_bg": "#FFEDD5",
+      "upi_active": "#0369A1",
+      "upi_active_bg": "#E0F2FE"
+    }
+  },
+  "typography": {
+    "font_family_headings": "Outfit, Barlow Condensed, sans-serif",
+    "font_family_body": "Plus Jakarta Sans, DM Sans, sans-serif",
+    "font_family_mono": "JetBrains Mono, IBM Plex Mono, monospace",
+    "google_fonts_url": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap",
+    "scale": {
+      "h1_hero": "text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-none",
+      "h2_section": "text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight",
+      "h3_card": "text-xl sm:text-2xl font-bold tracking-snug",
+      "body": "text-sm sm:text-base leading-relaxed text-slate-700",
+      "mono_price": "font-mono font-bold text-amber-700 text-lg sm:text-xl text-right md:text-left"
+    }
+  },
+  "spacing_and_layout": {
+    "container_padding": "px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto",
+    "section_gap": "py-12 sm:py-16 lg:py-20",
+    "bento_grid_catalog": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6",
+    "dashboard_grid": "grid grid-cols-1 lg:grid-cols-12 gap-6"
+  },
+  "image_urls": {
+    "hero_background": "https://images.unsplash.com/photo-1508450859948-4e04fabaa4ea?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHwxfHxjZW1lbnQlMjBjb25zdHJ1Y3Rpb24lMjBidWlsZGluZyUyMHNpdGV8ZW58MHx8fHwxNzg4NjI2NTE1fDA&ixlib=rb-4.1.0&q=85",
+    "steel_banner": "https://images.unsplash.com/photo-1530863506128-dc9eb5c3e0fc?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHszfHxzdGVlbCUyMHJvZHMlMjBjb25zdHJ1Y3Rpb24lMjBidWlsZGluZ3xlbnwwfHx8fDE3ODg2MjY1MTV8MA&ixlib=rb-4.1.0&q=85",
+    "warehouse_stock": "https://images.unsplash.com/photo-1787422429898-709636d27d1a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHw0fHxjb25zdHJ1Y3Rpb24lMjBtYXRlcmlhbHMlMjB3YXJlaG91c2V8ZW58MHx8fHwxNzg4NjI2NTE1fDA&ixlib=rb-4.1.0&q=85",
+    "products_defaults": {
+      "cement": "https://images.unsplash.com/photo-1563166423-482a8c14b2d6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHwzfHxjZW1lbnQlMjBjb25zdHJ1Y3Rpb24lMjBidWlsZGluZyUyMHNpdGV8ZW58MHx8fHwxNzg4NjI2NTE1fDA&ixlib=rb-4.1.0&q=85",
+      "steel": "https://images.unsplash.com/photo-1761479867761-7a8b11f54449?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHw0fHxzdGVlbCUyMHJvZHMlMjBjb25zdHJ1Y3Rpb24lMjBidWlsZGluZ3xlbnwwfHx8fDE3ODg2MjY1MTV8MA&ixlib=rb-4.1.0&q=85",
+      "aggregates": "https://images.unsplash.com/photo-1615461476249-718ef8bc369c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHw0fHxjZW1lbnQlMjBjb25zdHJ1Y3Rpb24lMjBidWlsZGluZyUyMHNpdGV8ZW58MHx8fHwxNzg4NjI2NTE1fDA&ixlib=rb-4.1.0&q=85"
+    }
+  },
+  "key_features_implementation": {
+    "public_catalog": {
+      "categories": ["All", "Cement Bags", "TMT Steel Rods", "Sand & Aggregates", "Binding Wire & Accessories"],
+      "brands_supported": ["UltraTech", "Ambuja Cement", "Ramco Cement", "Maha Cement", "Tata Tiscon", "JSW Neosteel", "Vizag Steel"],
+      "card_components": [
+        "Product photo thumbnail with brand tag",
+        "Multiple brand price & stock selector dropdown / tabs",
+        "Price per bag / ton with unit calculator",
+        "Stock Availability indicator badge",
+        "Quantity counter input",
+        "Add to Cart button & Quick WhatsApp Quote button"
+      ]
+    },
+    "cart_and_whatsapp_checkout": {
+      "steps": [
+        "1. Cart Drawer / Modal: Item list, selected brand, quantity, per unit price, total price",
+        "2. Delivery Site Details: Customer name, phone, site delivery address, delivery urgency date, site contact",
+        "3. Payment QR & WhatsApp Forwarding: Shows active UPI QR Code with rotated UPI ID, displays 2-day ₹3 Lakh limit badge, copy UPI ID button, and 'Send Order Details via WhatsApp' button which opens wa.me with formatted order string"
+      ],
+      "upi_rotation_logic": {
+        "rule": "Rotates UPI ID automatically or via admin setting if current UPI ID accumulated 2-day total >= ₹300,000",
+        "default_upis": [
+          {"id": "srivenkataramana1@ybl", "name": "Sri Venkataramana Traders - Account 1", "limit_2day": 300000, "current_2day": 145000, "active": true},
+          {"id": "srivenkataramana2@icici", "name": "Sri Venkataramana Traders - Account 2", "limit_2day": 300000, "current_2day": 80000, "active": false}
+        ]
+      }
+    },
+    "meeting_booking": {
+      "purpose": "Site Visit / Bulk Pricing Consultation / Wholesale Deal Booking",
+      "fields": ["Full Name", "Mobile Number", "Project Site Location", "Materials Required (Cement/Steel Estimate)", "Preferred Date & Time", "Notes"],
+      "behavior": "Saves meeting request in DB (visible in Admin Dashboard) and triggers WhatsApp message to +91 9440828759"
+    },
+    "admin_dashboard": {
+      "access": "Pin / Password Login Modal or Page (Default credentials: admin / admin123)",
+      "modules": [
+        "Product Management: Add/edit product title, photo URL, category, unit (Bag / Ton / KG / Bundle), add multiple brands per product with editable price and stock count",
+        "UPI Rotation Manager: Manage active UPI IDs, view 2-day received amount, switch active UPI ID, edit limit thresholds",
+        "Orders Log: View all guest order attempts, status (Pending, Paid via UPI, Confirmed, Delivered), filter by date, copy WhatsApp receipt string",
+        "Meeting Requests: Manage site visit and consultation bookings, mark status (New, Scheduled, Completed), instant WhatsApp reply button"
+      ]
+    }
+  },
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Never use full transparent headers or background panels where text overlaps images.",
+    "All interactive elements (buttons, inputs, filters, tabs, cards, dropdowns) MUST include data-testid attributes formatted in kebab-case (e.g. data-testid='product-card-ultratech', data-testid='checkout-submit-whatsapp-button').",
+    "Use sonner for toast notifications (located in /app/frontend/src/components/ui/sonner.jsx).",
+    "Ensure total price calculations in cart accurately multiply unit price by quantity and update instantly.",
+    "Provide sample default product items pre-loaded in state/localStorage/backend so the public store is populated with cement and steel TMT rods out of the box."
+  ]
+}
