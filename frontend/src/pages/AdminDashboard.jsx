@@ -16,6 +16,8 @@ import {
   FileDown,
   Truck,
   CheckCircle2,
+  Settings,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +33,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import api, { formatINR, formatApiError } from "@/lib/api";
+import api, { BACKEND_URL, formatINR, formatApiError } from "@/lib/api";
 
 const UNITS = ["Bag (50 Kg)", "Ton", "KG", "Bundle", "Piece"];
 const CALC_TYPES = [
@@ -48,6 +50,7 @@ const TABS = [
   { key: "categories", label: "Categories", icon: Tag },
   { key: "upi", label: "UPI Accounts", icon: IndianRupee },
   { key: "orders", label: "Orders", icon: ShoppingBag },
+  { key: "settings", label: "Settings", icon: Settings },
 ];
 
 export default function AdminDashboard() {
@@ -105,6 +108,7 @@ export default function AdminDashboard() {
         {tab === "categories" && <CategoriesTab />}
         {tab === "upi" && <UpiTab />}
         {tab === "orders" && <OrdersTab onChange={loadStats} />}
+        {tab === "settings" && <SettingsTab />}
       </div>
     </div>
   );
@@ -799,6 +803,16 @@ function OrdersTab({ onChange }) {
                   <Button size="sm" variant="outline" onClick={() => contactWhatsApp(o)} className="text-[#15803D] border-[#DCFCE7]" data-testid={`order-whatsapp-${o.id}`}>
                     <MessageCircle className="w-3 h-3" />
                   </Button>
+                  <a
+                    href={`${BACKEND_URL}/api/orders/${o.order_code}/invoice.pdf?download=1`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Download GST tax invoice"
+                  >
+                    <Button size="sm" variant="outline" className="text-[#0F172A]" data-testid={`order-invoice-${o.id}`}>
+                      <FileText className="w-3 h-3" />
+                    </Button>
+                  </a>
                   <Select value={o.status} onValueChange={(v) => updateStatus(o.id, v)}>
                     <SelectTrigger className="h-8 w-40 text-xs" data-testid={`order-status-${o.id}`}><SelectValue /></SelectTrigger>
                     <SelectContent>{ORDER_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
@@ -824,6 +838,126 @@ function OrdersTab({ onChange }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Settings — shop identity + GSTIN used on the tax invoice
+// -----------------------------------------------------------------------------
+function SettingsTab() {
+  const [form, setForm] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api
+      .get("/admin/settings")
+      .then((r) =>
+        setForm({
+          shop_name: r.data.shop_name || "",
+          address: r.data.address || "",
+          gstin: r.data.gstin || "",
+          maps_url: r.data.maps_url || "",
+          opening_hours: r.data.opening_hours || "",
+          default_advance_percent: r.data.default_advance_percent ?? 50,
+          is_open: r.data.is_open ?? true,
+        })
+      )
+      .catch((e) => toast.error(formatApiError(e)));
+  }, []);
+
+  const save = () => {
+    setSaving(true);
+    api
+      .patch("/admin/settings", form)
+      .then(() => toast.success("Settings saved"))
+      .catch((e) => toast.error(formatApiError(e)))
+      .finally(() => setSaving(false));
+  };
+
+  if (!form) {
+    return <div className="text-slate-500 text-sm" data-testid="settings-loading">Loading settings…</div>;
+  }
+
+  const set = (k) => (e) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  return (
+    <div className="max-w-2xl" data-testid="settings-tab">
+      <div className="bg-white border border-slate-200 rounded-lg p-5">
+        <h3 className="font-heading font-bold text-lg text-[#0F172A]">Shop & Invoice Details</h3>
+        <p className="text-xs text-slate-500 mt-1 mb-5">
+          These appear on the header of every GST tax invoice PDF.
+        </p>
+
+        <div className="space-y-4">
+          <Field label="Shop name">
+            <Input value={form.shop_name} onChange={set("shop_name")} data-testid="settings-shop-name" />
+          </Field>
+
+          <Field label="GSTIN" hint="Required for a legally compliant tax invoice. 15 characters, e.g. 37ABCDE1234F1Z5">
+            <Input
+              value={form.gstin}
+              onChange={set("gstin")}
+              placeholder="37ABCDE1234F1Z5"
+              className="font-mono"
+              data-testid="settings-gstin"
+            />
+          </Field>
+
+          <Field label="Shop address">
+            <Input value={form.address} onChange={set("address")} data-testid="settings-address" />
+          </Field>
+
+          <Field label="Opening hours">
+            <Input value={form.opening_hours} onChange={set("opening_hours")} data-testid="settings-hours" />
+          </Field>
+
+          <Field label="Google Maps link" hint="Optional — shown as 'View on map' to customers">
+            <Input value={form.maps_url} onChange={set("maps_url")} placeholder="https://maps.app.goo.gl/..." data-testid="settings-maps" />
+          </Field>
+
+          <Field label="Default advance %">
+            <Input
+              type="number"
+              min="0"
+              max="100"
+              value={form.default_advance_percent}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, default_advance_percent: Number(e.target.value) }))
+              }
+              data-testid="settings-advance-percent"
+            />
+          </Field>
+        </div>
+
+        {!form.gstin?.trim() && (
+          <div className="mt-5 text-xs text-[#92400E] bg-[#FFFBEB] border border-[#FEF3C7] rounded p-3" data-testid="settings-gstin-warning">
+            No GSTIN set yet — invoices will print a warning line instead of your GST number.
+          </div>
+        )}
+
+        <Button
+          onClick={save}
+          disabled={saving}
+          className="mt-5 btn-amber font-heading font-bold uppercase tracking-wide"
+          data-testid="settings-save-btn"
+        >
+          {saving ? "Saving…" : "Save settings"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, hint, children }) {
+  return (
+    <div>
+      <label className="block text-xs font-bold uppercase tracking-wide text-slate-600 mb-1.5">
+        {label}
+      </label>
+      {children}
+      {hint && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
     </div>
   );
 }

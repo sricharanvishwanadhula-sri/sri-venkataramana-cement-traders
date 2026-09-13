@@ -3,10 +3,11 @@ import { useParams, Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, MessageCircle, Phone, MapPin, Clock, Copy } from "lucide-react";
+import { CheckCircle, MessageCircle, Phone, MapPin, Clock, Copy, FileText } from "lucide-react";
 import { toast } from "sonner";
-import api, { formatINR } from "@/lib/api";
+import api, { BACKEND_URL, formatINR } from "@/lib/api";
 import { useLang } from "@/context/LanguageContext";
+import UpiPayBlock from "@/components/UpiPayBlock";
 
 const WHATSAPP = "919440828759";
 
@@ -39,6 +40,34 @@ export default function OrderConfirmation() {
     toast.success("Order code copied");
   };
 
+  const invoiceUrl = order
+    ? `${BACKEND_URL}/api/orders/${order.order_code}/invoice.pdf`
+    : "";
+
+  const openInvoice = () => {
+    window.open(`${invoiceUrl}?download=1`, "_blank");
+  };
+
+  const sendInvoiceWhatsApp = () => {
+    if (!order) return;
+    const msg = [
+      `*GST Tax Invoice — ${order.order_code}*`,
+      `${shop?.shop_name || "Sri Venkataramana Cement Traders"}`,
+      ``,
+      `*Customer:* ${order.customer_name}`,
+      `*Total:* ₹${order.total_amount}`,
+      `*Advance (${order.advance_percent}%):* ₹${order.advance_amount}`,
+      `*Balance at pickup:* ₹${order.balance_amount}`,
+      ``,
+      `Download your invoice PDF:`,
+      invoiceUrl,
+    ].join("\n");
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(msg)}`,
+      "_blank"
+    );
+  };
+
   const sendWhatsApp = () => {
     if (!order) return;
     const trackLink = `${window.location.origin}/order/${order.order_code}`;
@@ -62,6 +91,7 @@ export default function OrderConfirmation() {
       `Balance at pickup: ₹${order.balance_amount}`,
       `UPI: ${order.assigned_upi_id}`,
       ``,
+      `Invoice PDF: ${invoiceUrl}`,
       `Track: ${trackLink}`,
     ].filter(Boolean).join("\n");
     window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank");
@@ -158,6 +188,9 @@ export default function OrderConfirmation() {
           )}
         </div>
 
+        {/* UPI payment QR */}
+        <UpiPayBlock order={order} />
+
         {/* Shop info */}
         {shop && (
           <div className="mt-4 bg-white border border-slate-200 rounded-lg p-5" data-testid="shop-block">
@@ -174,6 +207,30 @@ export default function OrderConfirmation() {
             )}
           </div>
         )}
+
+        {/* Invoice actions */}
+        <div className="mt-4 bg-white border border-slate-200 rounded-lg p-5" data-testid="invoice-block">
+          <h2 className="font-heading font-bold text-lg text-[#0F172A] mb-1">GST Tax Invoice</h2>
+          <p className="text-xs text-slate-500 mb-4">
+            Download your invoice as a PDF, or share the download link on WhatsApp.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Button
+              onClick={openInvoice}
+              className="h-12 bg-[#0F172A] hover:bg-[#1E293B] text-white font-heading font-bold uppercase tracking-wide"
+              data-testid="download-invoice-btn"
+            >
+              <FileText className="w-4 h-4 mr-2" /> Download invoice PDF
+            </Button>
+            <Button
+              onClick={sendInvoiceWhatsApp}
+              className="h-12 bg-[#15803D] hover:bg-[#166534] text-white font-heading font-bold uppercase tracking-wide"
+              data-testid="send-invoice-whatsapp-btn"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" /> Send invoice on WhatsApp
+            </Button>
+          </div>
+        </div>
 
         {/* Actions */}
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">

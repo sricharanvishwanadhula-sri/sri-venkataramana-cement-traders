@@ -50,6 +50,37 @@ Business model has since been frozen (v1.2): **strictly local shop pickup**. Cus
 - Email: `sricharanvishwanadhula@gmail.com`
 - Password: `Admin@12345`
 - Route: `/admin`
+- Login endpoint is `POST /api/auth/login`; the JWT comes back as `token` (NOT
+  `access_token`) and the frontend stores it in `localStorage.admin_token`.
+
+## Sprint 2 — Invoice + UPI QR (2026-09, complete)
+- **GST tax invoice PDF** (`backend/lib/invoice.py`, reportlab):
+  `GET /api/orders/{order_code}/invoice.pdf` — public, addressed by order code.
+  `?download=1` sets `Content-Disposition: attachment`, otherwise inline.
+  Renders shop header + GSTIN, bill-to, payment status, HSN/qty/rate/GST% item
+  table, totals, advance/balance, and an embedded UPI QR. Indian digit grouping
+  (`12,34,567.50`). Shop name auto-shrinks so it never collides with the
+  "TAX INVOICE" label. Prints a warning line when GSTIN is unset.
+- **UPI payment QR** (`qrcode[pil]`):
+  `GET /api/orders/{order_code}/upi-qr.png?part=advance|balance|total` → PNG,
+  and `GET /api/orders/{order_code}/upi-intent` → the raw `upi://pay` deep link
+  plus per-app scheme variants. Amount is computed server-side from the stored
+  order, so it cannot be tampered with from the browser. One QR is scannable by
+  PhonePe, Google Pay, Paytm, BHIM and any bank app (all implement the same NPCI
+  `upi://pay` spec) — there is no per-app QR.
+- **Shop settings**: `GET/PATCH /api/admin/settings` (admin-only) + a new
+  **Settings tab** in the admin dashboard for shop_name, **gstin**, address,
+  opening hours, maps_url, default advance %. `gstin` is also exposed on
+  `/api/settings/public`.
+- **Frontend**: `components/UpiPayBlock.jsx` (QR + amount + copy UPI + "Open UPI
+  app to pay"), shown on `/order/:code`; invoice block with "Download invoice
+  PDF" and "Send invoice on WhatsApp"; invoice icon button per row in the admin
+  Orders tab.
+- **KNOWN LIMITATION**: WhatsApp deep links cannot attach a file. "Send invoice
+  on WhatsApp" shares a *link* to the PDF, not the PDF itself. Attaching the
+  file would need the WhatsApp Business Cloud API.
+- **GSTIN is intentionally blank** — the owner must enter the real one in
+  Admin → Settings before issuing compliant invoices.
 
 ## Backlog
 ### Sprint 2 — Legal + Speed (P1)

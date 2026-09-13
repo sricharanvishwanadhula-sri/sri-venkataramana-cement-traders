@@ -17,9 +17,12 @@ from typing import List, Optional, Literal
 import jwt
 import bcrypt
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, UploadFile, File
+from fastapi.responses import Response
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
+
+from lib.invoice import invoice_pdf, upi_qr_png, build_upi_uri
 
 
 # -----------------------------------------------------------------------------
@@ -281,6 +284,16 @@ class OrderStatusUpdate(BaseModel):
     verified: Optional[bool] = None
     utr_ref: Optional[str] = None
     screenshot_url: Optional[str] = None
+
+
+class ShopSettingsUpdate(BaseModel):
+    shop_name: Optional[str] = None
+    address: Optional[str] = None
+    gstin: Optional[str] = None
+    maps_url: Optional[str] = None
+    opening_hours: Optional[str] = None
+    is_open: Optional[bool] = None
+    default_advance_percent: Optional[int] = None
 
 
 ALLOWED_STATUSES = {"PendingVerification", "AdvanceReceived", "ReadyForPickup", "Completed", "Cancelled"}
@@ -886,6 +899,99 @@ async def get_order_public(order_code: str):
 
 
 # -----------------------------------------------------------------------------
+# Invoice PDF + UPI QR  (public, addressed by the order code)
+# -----------------------------------------------------------------------------
+async def _load_order_or_404(order_code: str) -> dict:
+    doc = await db.orders.find_one({"order_code": order_code.upper()}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return doc
+
+
+@api_router.get("/orders/{order_code}/invoice.pdf")
+async def order_invoice_pdf(order_code: str, download: bool = False):
+    """GST tax invoice for one order, as a PDF.
+
+    `?download=1` forces a file download; otherwise it renders inline so the
+    WhatsApp/browser preview works.
+    """
+    order = await _load_order_or_404(order_code)
+    shop = await _get_settings()
+    shop = {**shop, "whatsapp": shop.get("whatsapp") or BUSINESS_WHATSAPP}
+    pdf = invoice_pdf(order, shop)
+    disp = "attachment" if download else "inline"
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'{disp}; filename="Invoice-{order["order_code"]}.pdf"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@api_router.get("/orders/{order_code}/upi-qr.png")
+async def order_upi_qr(order_code: str, part: Literal["advance", "balance", "total"] = "advance"):
+    """UPI payment QR for this order, pre-filled with the exact amount.
+
+    One QR is scannable by PhonePe, Google Pay, Paytm, BHIM and any bank UPI
+    app — they all implement the same NPCI `upi://pay` spec.
+    """
+    order = await _load_order_or_404(order_code)
+    upi_id = order.get("assigned_upi_id") or ""
+    if not upi_id:
+        raise HTTPException(status_code=409, detail="No UPI account assigned to this order")
+
+    amount = {
+        "advance": order.get("advance_amount", 0),
+        "balance": order.get("balance_amount", 0),
+        "total": order.get("total_amount", 0),
+    }[part]
+    if amount <= 0:
+        raise HTTPException(status_code=409, detail=f"Nothing payable for '{part}'")
+
+    settings = await _get_settings()
+    payee = settings.get("shop_name") or "Sri Venkataramana Cement Traders"
+    png = upi_qr_png(upi_id, payee, amount, f"{order['order_code']} {part}")
+    return Response(content=png, media_type="image/png",
+                    headers={"Cache-Control": "no-store"})
+
+
+@api_router.get("/orders/{order_code}/upi-intent")
+async def order_upi_intent(order_code: str, part: Literal["advance", "balance", "total"] = "advance"):
+    """The raw `upi://pay` deep link + per-app links, for tap-to-pay on mobile."""
+    order = await _load_order_or_404(order_code)
+    upi_id = order.get("assigned_upi_id") or ""
+    if not upi_id:
+        raise HTTPException(status_code=409, detail="No UPI account assigned to this order")
+
+    amount = {
+        "advance": order.get("advance_amount", 0),
+        "balance": order.get("balance_amount", 0),
+        "total": order.get("total_amount", 0),
+    }[part]
+    settings = await _get_settings()
+    payee = settings.get("shop_name") or "Sri Venkataramana Cement Traders"
+    note = f"{order['order_code']} {part}"
+    uri = build_upi_uri(upi_id, payee, amount, note)
+    return {
+        "upi_id": upi_id,
+        "payee_name": payee,
+        "amount": amount,
+        "part": part,
+        "note": note,
+        "uri": uri,
+        # Same payload, app-specific schemes. `uri` is the reliable universal one.
+        "apps": {
+            "any": uri,
+            "phonepe": uri.replace("upi://pay", "phonepe://pay"),
+            "gpay": uri.replace("upi://pay", "tez://upi/pay"),
+            "paytm": uri.replace("upi://pay", "paytmmp://pay"),
+        },
+    }
+
+
+# -----------------------------------------------------------------------------
 # Admin: Orders
 # -----------------------------------------------------------------------------
 @api_router.get("/admin/orders", response_model=List[Order])
@@ -964,12 +1070,29 @@ async def public_settings():
     return {
         "shop_name": s.get("shop_name", "Sri Venkataramana Cement Traders"),
         "address": s.get("address", "Andhra Pradesh, India"),
+        "gstin": s.get("gstin", ""),
         "maps_url": s.get("maps_url", ""),
         "whatsapp": BUSINESS_WHATSAPP,
         "opening_hours": s.get("opening_hours", "Mon–Sat 8:00 AM – 8:00 PM"),
         "is_open": s.get("is_open", True),
         "default_advance_percent": s.get("default_advance_percent", 50),
     }
+
+
+@api_router.get("/admin/settings")
+async def admin_get_settings(admin=Depends(get_current_admin)):
+    return await _get_settings()
+
+
+@api_router.patch("/admin/settings")
+async def admin_update_settings(payload: ShopSettingsUpdate, admin=Depends(get_current_admin)):
+    updates = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    current = await _get_settings()
+    merged = {**current, **updates}
+    await db.settings.update_one({"key": "shop"}, {"$set": {"value": merged}}, upsert=True)
+    return merged
 
 
 # -----------------------------------------------------------------------------
@@ -998,6 +1121,7 @@ async def seed_settings():
             "value": {
                 "shop_name": "Sri Venkataramana Cement Traders",
                 "address": "Main Road, Andhra Pradesh, India",
+                "gstin": "",
                 "maps_url": "",
                 "whatsapp": BUSINESS_WHATSAPP,
                 "opening_hours": "Mon–Sat 8:00 AM – 8:00 PM",
