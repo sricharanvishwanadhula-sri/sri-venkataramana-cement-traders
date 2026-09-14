@@ -34,6 +34,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import api, { BACKEND_URL, formatINR, formatApiError } from "@/lib/api";
+import AdminCommerce from "@/components/AdminCommerce";
+import PaymentSetup from "@/components/PaymentSetup";
 
 const UNITS = ["Bag (50 Kg)", "Ton", "KG", "Bundle", "Piece"];
 const CALC_TYPES = [
@@ -48,8 +50,8 @@ const TABS = [
   { key: "overview", label: "Overview", icon: Wallet },
   { key: "products", label: "Products", icon: Package },
   { key: "categories", label: "Categories", icon: Tag },
-  { key: "upi", label: "UPI Accounts", icon: IndianRupee },
   { key: "orders", label: "Orders", icon: ShoppingBag },
+  { key: "payment-setup", label: "Payment Setup", icon: Wallet },
   { key: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -103,11 +105,12 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {tab === "overview" && <Overview stats={stats} />}
+        {tab === "overview" && <><div className="bg-amber-50 border border-amber-200 text-amber-900 text-sm p-4 rounded-lg mb-5" data-testid="admin-payments-locked">Online payments are locked. Open Payment Setup for the WhatsApp and PhonePe activation checklist. Earlier orders are preserved under Orders → Earlier orders.</div><Overview stats={stats} /></>}
         {tab === "products" && <ProductsTab onChange={loadStats} />}
         {tab === "categories" && <CategoriesTab />}
         {tab === "upi" && <UpiTab />}
-        {tab === "orders" && <OrdersTab onChange={loadStats} />}
+        {tab === "orders" && <AdminCommerce onChange={loadStats} />}
+        {tab === "payment-setup" && <PaymentSetup />}
         {tab === "settings" && <SettingsTab />}
       </div>
     </div>
@@ -118,10 +121,10 @@ function Overview({ stats }) {
   if (!stats) return <div className="text-slate-500">Loading...</div>;
   const cards = [
     { label: "Total Products", value: stats.products, sub: "Active in catalog" },
-    { label: "Revenue (30d)", value: formatINR(stats.revenue_30day), sub: "Last 30 days" },
-    { label: "Advance (30d)", value: formatINR(stats.advance_30day), sub: "Last 30 days" },
-    { label: "Total Orders", value: stats.orders, sub: `${stats.pending_orders} pending` },
-    { label: "UPI Accounts", value: stats.upi_accounts, sub: "Enabled" },
+    { label: "Verified Revenue (30d)", value: formatINR(stats.revenue_30day), sub: "Provider-confirmed only" },
+    { label: "Full Payments (30d)", value: formatINR(stats.advance_30day), sub: "Provider-confirmed only" },
+    { label: "Paid Orders", value: stats.orders, sub: `${stats.pending_orders} awaiting pickup` },
+    { label: "Checkout", value: "Locked", sub: "Provider setup required" },
   ];
   return (
     <div className="grid grid-cols-2 lg:grid-cols-5 gap-4" data-testid="overview-cards">
@@ -859,7 +862,7 @@ function SettingsTab() {
           gstin: r.data.gstin || "",
           maps_url: r.data.maps_url || "",
           opening_hours: r.data.opening_hours || "",
-          default_advance_percent: r.data.default_advance_percent ?? 50,
+          default_advance_percent: 100,
           is_open: r.data.is_open ?? true,
         })
       )
@@ -917,23 +920,19 @@ function SettingsTab() {
             <Input value={form.maps_url} onChange={set("maps_url")} placeholder="https://maps.app.goo.gl/..." data-testid="settings-maps" />
           </Field>
 
-          <Field label="Default advance %">
+          <Field label="Full payment required (%)" hint="Fixed at 100%. Shop pickup only; no delivery or advance instalments.">
             <Input
               type="number"
-              min="0"
-              max="100"
-              value={form.default_advance_percent}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, default_advance_percent: Number(e.target.value) }))
-              }
-              data-testid="settings-advance-percent"
+              value={100}
+              disabled
+              data-testid="settings-full-payment-percent"
             />
           </Field>
         </div>
 
         {!form.gstin?.trim() && (
           <div className="mt-5 text-xs text-[#92400E] bg-[#FFFBEB] border border-[#FEF3C7] rounded p-3" data-testid="settings-gstin-warning">
-            No GSTIN set yet — invoices will print a warning line instead of your GST number.
+            No GSTIN set yet. Tax invoice issuance is blocked until real tax details are configured and reviewed.
           </div>
         )}
 

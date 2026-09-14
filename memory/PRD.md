@@ -1,5 +1,7 @@
 # Sri Venkataramana Cement Traders — PRD
 
+> CURRENT OVERRIDE: See `SPEC.md` and `PAYMENT_SETUP.md`. Owner requires **100% payment in one transaction, shop pickup only, no delivery**, with official WhatsApp OTP before any payment. Approved release: **locked groundwork** until PhonePe/Meta setup, credentials, fee approval and adapter tests. Older advance/QR/manual-verification requirements below are historical. Earlier records remain in admin; public order/phone/PDF access and direct payment bypasses are closed. No live OTP/payment/invoice sending claimed.
+
 ## Original Problem Statement
 > "can i build a complete web app for my cement and steel business and which handles payments and book meetings and orders at one place and very easy to use"
 

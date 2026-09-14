@@ -1,0 +1,21 @@
+// Typed boundary around the restored application's JavaScript shadcn components.
+import type { ComponentType, ButtonHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttributes, LabelHTMLAttributes, HTMLAttributes, PropsWithChildren } from "react";
+import { Button as OriginalButton } from "./ui/button";
+import { Input as OriginalInput } from "./ui/input";
+import { Textarea as OriginalTextarea } from "./ui/textarea";
+import { Label as OriginalLabel } from "./ui/label";
+import { Sheet as OriginalSheet, SheetContent as OriginalSheetContent, SheetTitle as OriginalSheetTitle, SheetDescription as OriginalSheetDescription } from "./ui/sheet";
+import { Dialog as OriginalDialog, DialogContent as OriginalDialogContent, DialogTitle as OriginalDialogTitle, DialogDescription as OriginalDialogDescription } from "./ui/dialog";
+export const Button = OriginalButton as ComponentType<ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string; size?: string; asChild?: boolean }>;
+export const Input = OriginalInput as ComponentType<InputHTMLAttributes<HTMLInputElement>>;
+export const Textarea = OriginalTextarea as ComponentType<TextareaHTMLAttributes<HTMLTextAreaElement>>;
+export const Label = OriginalLabel as ComponentType<LabelHTMLAttributes<HTMLLabelElement>>;
+type OverlayProps = PropsWithChildren<{ open: boolean; onOpenChange: (open: boolean) => void }>;
+export const Sheet = OriginalSheet as ComponentType<OverlayProps>;
+export const SheetContent = OriginalSheetContent as ComponentType<HTMLAttributes<HTMLDivElement> & { side?: string }>;
+export const SheetTitle = OriginalSheetTitle as ComponentType<HTMLAttributes<HTMLHeadingElement>>;
+export const SheetDescription = OriginalSheetDescription as ComponentType<HTMLAttributes<HTMLParagraphElement>>;
+export const Dialog = OriginalDialog as ComponentType<OverlayProps>;
+export const DialogContent = OriginalDialogContent as ComponentType<HTMLAttributes<HTMLDivElement>>;
+export const DialogTitle = OriginalDialogTitle as ComponentType<HTMLAttributes<HTMLHeadingElement>>;
+export const DialogDescription = OriginalDialogDescription as ComponentType<HTMLAttributes<HTMLParagraphElement>>;

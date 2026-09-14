@@ -11,6 +11,7 @@ import uuid
 import string
 import secrets
 import logging
+import math
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Literal
 
@@ -23,6 +24,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 
 from lib.invoice import invoice_pdf, upi_qr_png, build_upi_uri
+from lib.checkout_security import paid_order_filter, rate_limit, require_provider_activation
+from models.checkout import CartQuoteResponse, CheckoutItem
+from routers.checkout import create_checkout_router
 
 
 # -----------------------------------------------------------------------------
@@ -220,10 +224,8 @@ class UpiUpdate(BaseModel):
     enabled: Optional[bool] = None
 
 
-class CartItemIn(BaseModel):
-    product_id: str
-    brand_id: str
-    quantity: float
+class CartItemIn(CheckoutItem):
+    pass
 
 
 class OrderItemLine(BaseModel):
@@ -254,7 +256,7 @@ class OrderCreate(BaseModel):
     customer_phone: str
     notes: str = ""
     items: List[CartItemIn]
-    advance_percent: int = 50  # 25 / 50 / 100
+    advance_percent: Literal[100] = 100
 
 
 class Order(BaseModel):
@@ -280,6 +282,7 @@ class Order(BaseModel):
 
 
 class OrderStatusUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     status: Optional[str] = None
     verified: Optional[bool] = None
     utr_ref: Optional[str] = None
@@ -293,10 +296,10 @@ class ShopSettingsUpdate(BaseModel):
     maps_url: Optional[str] = None
     opening_hours: Optional[str] = None
     is_open: Optional[bool] = None
-    default_advance_percent: Optional[int] = None
+    default_advance_percent: Optional[Literal[100]] = None
 
 
-ALLOWED_STATUSES = {"PendingVerification", "AdvanceReceived", "ReadyForPickup", "Completed", "Cancelled"}
+ALLOWED_STATUSES = {"Preparing", "ReadyForPickup", "Completed"}
 
 
 # -----------------------------------------------------------------------------
@@ -385,15 +388,21 @@ async def _compute_cart(items: List[dict], settings: dict, category_map: dict):
 
     apply_gst_on_hamali = settings.get("apply_gst_on_hamali", False)
 
-    for it in items:
+    combined = {}
+    for item in items:
+        key = (item["product_id"], item["brand_id"])
+        if key not in combined:
+            combined[key] = {**item, "quantity": 0}
+        combined[key]["quantity"] += float(item["quantity"])
+    for it in combined.values():
         prod = await db.products.find_one({"id": it["product_id"]}, {"_id": 0})
-        if not prod:
+        if not prod or not prod.get("is_active", True):
             raise HTTPException(status_code=404, detail=f"Product not found: {it['product_id']}")
         brand = next((b for b in prod.get("brands", []) if b["id"] == it["brand_id"]), None)
         if not brand:
             raise HTTPException(status_code=404, detail=f"Brand not found for product {prod['title']}")
         qty = float(it["quantity"])
-        if qty <= 0:
+        if not math.isfinite(qty) or qty <= 0 or qty > 100000:
             raise HTTPException(status_code=400, detail=f"Invalid quantity for {prod['title']}")
         if qty > brand["stock"]:
             insufficient.append({
@@ -405,6 +414,8 @@ async def _compute_cart(items: List[dict], settings: dict, category_map: dict):
             })
 
         unit_price = float(brand["price"])
+        if not math.isfinite(unit_price) or unit_price < 0:
+            raise HTTPException(409, "A product price needs review. Please contact the shop.")
         line_subtotal = round(unit_price * qty, 2)
         gst_rate = float(prod.get("gst_rate", 0.0))
         hamali_cfg = _resolve_product_hamali(prod, category_map)
@@ -443,8 +454,10 @@ async def _compute_cart(items: List[dict], settings: dict, category_map: dict):
 # Auth Endpoints
 # -----------------------------------------------------------------------------
 @api_router.post("/auth/login")
-async def admin_login(payload: LoginRequest):
+async def admin_login(payload: LoginRequest, request: Request):
     email = payload.email.lower()
+    await rate_limit(db, JWT_SECRET, "admin-login-account", email, 10, 300)
+    await rate_limit(db, JWT_SECRET, "admin-login-client", request.client.host if request.client else "unknown", 50, 300)
     admin = await db.admins.find_one({"email": email})
     if not admin or not verify_password(payload.password, admin["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -711,7 +724,7 @@ async def _pick_active_upi():
     return upis[0], totals
 
 
-@api_router.get("/upi/active")
+@api_router.get("/upi/active", dependencies=[Depends(require_provider_activation)])
 async def get_active_upi(amount: Optional[float] = None):
     upi, totals = await _pick_active_upi()
     if not upi:
@@ -762,18 +775,19 @@ async def delete_upi(upi_id: str, admin=Depends(get_current_admin)):
 # Cart quote (public helper)
 # -----------------------------------------------------------------------------
 class CartQuoteIn(BaseModel):
-    items: List[CartItemIn]
-    advance_percent: int = 50
+    model_config = ConfigDict(extra="forbid")
+    items: List[CartItemIn] = Field(min_length=1, max_length=100)
+    advance_percent: Literal[100] = 100
 
 
-@api_router.post("/cart/quote")
+@api_router.post("/cart/quote", response_model=CartQuoteResponse)
 async def cart_quote(payload: CartQuoteIn):
     settings = await _get_settings()
     category_map = await _get_category_map()
     lines, subtotal, hamali_total, gst_total, total, insufficient = await _compute_cart(
         [i.model_dump() for i in payload.items], settings, category_map,
     )
-    pct = max(0, min(100, int(payload.advance_percent)))
+    pct = 100
     advance = round(total * pct / 100.0, 2)
     balance = round(total - advance, 2)
     return {
@@ -792,7 +806,7 @@ async def cart_quote(payload: CartQuoteIn):
 # -----------------------------------------------------------------------------
 # Orders (public create + track)
 # -----------------------------------------------------------------------------
-@api_router.post("/orders")
+@api_router.post("/orders", dependencies=[Depends(require_provider_activation)])
 async def create_order(payload: OrderCreate):
     if not payload.items:
         raise HTTPException(status_code=400, detail="Cart is empty")
@@ -878,7 +892,7 @@ async def create_order(payload: OrderCreate):
 
 
 @api_router.get("/orders/track")
-async def track_orders(phone: str):
+async def track_orders(phone: str, admin=Depends(get_current_admin)):
     if not phone or len(phone.strip()) < 5:
         raise HTTPException(status_code=400, detail="Phone required")
     p = phone.strip()
@@ -891,7 +905,7 @@ async def track_orders(phone: str):
 
 
 @api_router.get("/orders/{order_code}")
-async def get_order_public(order_code: str):
+async def get_order_public(order_code: str, admin=Depends(get_current_admin)):
     doc = await db.orders.find_one({"order_code": order_code.upper()}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -909,7 +923,7 @@ async def _load_order_or_404(order_code: str) -> dict:
 
 
 @api_router.get("/orders/{order_code}/invoice.pdf")
-async def order_invoice_pdf(order_code: str, download: bool = False):
+async def order_invoice_pdf(order_code: str, download: bool = False, admin=Depends(get_current_admin)):
     """GST tax invoice for one order, as a PDF.
 
     `?download=1` forces a file download; otherwise it renders inline so the
@@ -917,8 +931,12 @@ async def order_invoice_pdf(order_code: str, download: bool = False):
     """
     order = await _load_order_or_404(order_code)
     shop = await _get_settings()
+    if not await db.orders.find_one({"id": order["id"], **paid_order_filter()}):
+        raise HTTPException(409, "Tax invoices require provider-confirmed full payment. Earlier records remain in admin history.")
+    if not shop.get("gstin", "").strip():
+        raise HTTPException(409, "Configure and review real tax details before issuing a GST invoice.")
     shop = {**shop, "whatsapp": shop.get("whatsapp") or BUSINESS_WHATSAPP}
-    pdf = invoice_pdf(order, shop)
+    pdf = invoice_pdf({**order, "assigned_upi_id": ""}, shop)
     disp = "attachment" if download else "inline"
     return Response(
         content=pdf,
@@ -930,7 +948,7 @@ async def order_invoice_pdf(order_code: str, download: bool = False):
     )
 
 
-@api_router.get("/orders/{order_code}/upi-qr.png")
+@api_router.get("/orders/{order_code}/upi-qr.png", dependencies=[Depends(require_provider_activation)])
 async def order_upi_qr(order_code: str, part: Literal["advance", "balance", "total"] = "advance"):
     """UPI payment QR for this order, pre-filled with the exact amount.
 
@@ -957,7 +975,7 @@ async def order_upi_qr(order_code: str, part: Literal["advance", "balance", "tot
                     headers={"Cache-Control": "no-store"})
 
 
-@api_router.get("/orders/{order_code}/upi-intent")
+@api_router.get("/orders/{order_code}/upi-intent", dependencies=[Depends(require_provider_activation)])
 async def order_upi_intent(order_code: str, part: Literal["advance", "balance", "total"] = "advance"):
     """The raw `upi://pay` deep link + per-app links, for tap-to-pay on mobile."""
     order = await _load_order_or_404(order_code)
@@ -996,31 +1014,28 @@ async def order_upi_intent(order_code: str, part: Literal["advance", "balance", 
 # -----------------------------------------------------------------------------
 @api_router.get("/admin/orders", response_model=List[Order])
 async def admin_list_orders(admin=Depends(get_current_admin)):
-    return await db.orders.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return await db.orders.find(paid_order_filter(), {"_id": 0}).sort("created_at", -1).to_list(1000)
 
 
 @api_router.patch("/admin/orders/{order_id}", response_model=Order)
 async def admin_update_order(order_id: str, payload: OrderStatusUpdate, admin=Depends(get_current_admin)):
+    if any(key in payload.model_fields_set for key in ("verified", "utr_ref", "screenshot_url")):
+        raise HTTPException(403, "Payment records are read-only. Only verified provider events may confirm payment.")
+    current = await db.orders.find_one({"id": order_id, **paid_order_filter()})
+    if not current:
+        raise HTTPException(409, "Only provider-confirmed, fully paid orders can enter the pickup workflow.")
+    transitions = {"Paid": "Preparing", "Preparing": "ReadyForPickup", "ReadyForPickup": "Completed"}
+    if transitions.get(current.get("status")) != payload.status:
+        raise HTTPException(409, "Follow pickup stages in order: Paid, Preparing, ReadyForPickup, Completed.")
     update: dict = {}
     if payload.status is not None:
         if payload.status not in ALLOWED_STATUSES:
             raise HTTPException(status_code=400, detail="Invalid status")
         update["status"] = payload.status
-    if payload.verified is not None:
-        update["payment.verified"] = payload.verified
-        update["payment.verified_at"] = datetime.now(timezone.utc).isoformat() if payload.verified else ""
-        # Auto-flip status to AdvanceReceived on first verification if still Pending
-        current = await db.orders.find_one({"id": order_id}, {"_id": 0})
-        if payload.verified and current and current.get("status") == "PendingVerification" and "status" not in update:
-            update["status"] = "AdvanceReceived"
-    if payload.utr_ref is not None:
-        update["payment.utr_ref"] = payload.utr_ref
-    if payload.screenshot_url is not None:
-        update["payment.screenshot_url"] = payload.screenshot_url
     if not update:
         raise HTTPException(status_code=400, detail="Nothing to update")
     update["updated_at"] = datetime.now(timezone.utc).isoformat()
-    r = await db.orders.update_one({"id": order_id}, {"$set": update})
+    r = await db.orders.update_one({"id": order_id, "status": current["status"]}, {"$set": update, "$push": {"timeline": {"at": update["updated_at"], "description": f"{admin['email']} updated pickup status to {payload.status}. Payment unchanged."}}})
     if r.matched_count == 0:
         raise HTTPException(status_code=404, detail="Order not found")
     return await db.orders.find_one({"id": order_id}, {"_id": 0})
@@ -1028,8 +1043,7 @@ async def admin_update_order(order_id: str, payload: OrderStatusUpdate, admin=De
 
 @api_router.delete("/admin/orders/{order_id}")
 async def admin_delete_order(order_id: str, admin=Depends(get_current_admin)):
-    await db.orders.delete_one({"id": order_id})
-    return {"ok": True}
+    raise HTTPException(403, "Orders and transaction history cannot be deleted.")
 
 
 # -----------------------------------------------------------------------------
@@ -1038,12 +1052,12 @@ async def admin_delete_order(order_id: str, admin=Depends(get_current_admin)):
 @api_router.get("/admin/stats")
 async def admin_stats(admin=Depends(get_current_admin)):
     products_count = await db.products.count_documents({"is_active": True})
-    orders_count = await db.orders.count_documents({})
-    pending_orders = await db.orders.count_documents({"status": "PendingVerification"})
+    orders_count = await db.orders.count_documents(paid_order_filter())
+    pending_orders = await db.orders.count_documents({**paid_order_filter(), "status": {"$in": ["Paid", "Preparing", "ReadyForPickup"]}})
     upi_count = await db.upi_accounts.count_documents({"enabled": True})
     cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
     pipeline = [
-        {"$match": {"created_at": {"$gte": cutoff}, "status": {"$ne": "Cancelled"}}},
+        {"$match": {**paid_order_filter(), "created_at": {"$gte": cutoff}, "status": {"$ne": "Cancelled"}}},
         {"$group": {"_id": None, "total": {"$sum": "$total_amount"}, "advance": {"$sum": "$advance_amount"}}},
     ]
     revenue = 0.0
@@ -1075,13 +1089,13 @@ async def public_settings():
         "whatsapp": BUSINESS_WHATSAPP,
         "opening_hours": s.get("opening_hours", "Mon–Sat 8:00 AM – 8:00 PM"),
         "is_open": s.get("is_open", True),
-        "default_advance_percent": s.get("default_advance_percent", 50),
+        "default_advance_percent": 100,
     }
 
 
 @api_router.get("/admin/settings")
 async def admin_get_settings(admin=Depends(get_current_admin)):
-    return await _get_settings()
+    return {**await _get_settings(), "default_advance_percent": 100}
 
 
 @api_router.patch("/admin/settings")
@@ -1090,7 +1104,7 @@ async def admin_update_settings(payload: ShopSettingsUpdate, admin=Depends(get_c
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
     current = await _get_settings()
-    merged = {**current, **updates}
+    merged = {**current, **updates, "default_advance_percent": 100}
     await db.settings.update_one({"key": "shop"}, {"$set": {"value": merged}}, upsert=True)
     return merged
 
@@ -1126,7 +1140,7 @@ async def seed_settings():
                 "whatsapp": BUSINESS_WHATSAPP,
                 "opening_hours": "Mon–Sat 8:00 AM – 8:00 PM",
                 "is_open": True,
-                "default_advance_percent": 50,
+                "default_advance_percent": 100,
                 "default_low_stock": 20,
                 "apply_gst_on_hamali": False,
             },
@@ -1156,13 +1170,6 @@ async def seed_categories():
 
 
 async def seed_products():
-    if await db.upi_accounts.count_documents({}) == 0:
-        for u in [
-            {"upi_id": "srivenkataramana1@ybl", "holder_name": "Sri Venkataramana Traders - PhonePe", "limit_2day": 300000, "enabled": True},
-            {"upi_id": "srivenkataramana2@icici", "holder_name": "Sri Venkataramana Traders - ICICI", "limit_2day": 300000, "enabled": True},
-        ]:
-            await db.upi_accounts.insert_one(UpiAccount(**u).model_dump())
-
     if await db.products.count_documents({}) > 0:
         return
     defaults = [
@@ -1246,6 +1253,10 @@ async def seed_products():
 
 
 async def create_indexes():
+    await db.checkout_drafts.create_index("session_hash", unique=True)
+    await db.checkout_drafts.create_index("id", unique=True)
+    await db.checkout_drafts.create_index("expiry", expireAfterSeconds=0)
+    await db.checkout_limits.create_index("expires_at", expireAfterSeconds=0)
     try:
         await db.admins.create_index("email", unique=True)
         await db.products.create_index("category")
@@ -1263,8 +1274,6 @@ async def create_indexes():
 # -----------------------------------------------------------------------------
 # Router & middleware
 # -----------------------------------------------------------------------------
-app.include_router(api_router)
-
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -1296,3 +1305,21 @@ async def on_startup():
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+
+async def _checkout_quote(items):
+    return await _compute_cart(items, await _get_settings(), await _get_category_map())
+
+
+@app.middleware("http")
+async def private_response_headers(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith(("/api/checkout", "/api/orders", "/api/admin", "/api/auth")):
+        response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+api_router.include_router(create_checkout_router(db, _checkout_quote, get_current_admin, _get_settings, JWT_SECRET))
+app.include_router(api_router)

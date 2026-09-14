@@ -1,3 +1,13 @@
 .App {
     min-height: 100vh;
 }
+
+.secure-checkout button, .commerce-panel button, .payment-setup a {
+    transition-property: background-color, border-color, color, transform, opacity;
+    transition-duration: 160ms;
+}
+.secure-checkout button:not(:disabled):active, .commerce-panel button:not(:disabled):active { transform: translateY(1px); }
+.secure-checkout input:focus-visible, .secure-checkout textarea:focus-visible { outline: 2px solid #D97706; outline-offset: 2px; }
+@keyframes checkout-enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.secure-checkout, .commerce-panel, .payment-setup { animation: checkout-enter 180ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .secure-checkout, .commerce-panel, .payment-setup { animation: none; } .secure-checkout button, .commerce-panel button { transition: none; } }

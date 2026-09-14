@@ -12,10 +12,10 @@ const dict = {
     quick_order_link: "Quick Order",
 
     // Home / Hero
-    hero_badge: "Local shop pickup · Live prices · Pay advance online",
+    hero_badge: "Local shop pickup · Live prices · No delivery",
     hero_h1_a: "Cement, Steel",
     hero_h1_b: "at Live Shop Prices.",
-    hero_desc: "See today's prices and stock. Pay advance online via UPI, pick up materials from our shop. Simple, fast, transparent.",
+    hero_desc: "See today's prices and stock. Choose your materials for shop pickup. Online payments are paused while official WhatsApp verification and payment services are connected.",
     browse_catalog: "Browse Catalog",
     call_shop: "Call the Shop",
     stat_years: "Years",
@@ -32,8 +32,8 @@ const dict = {
     usp1_desc: "Prices update daily. Stock is real-time.",
     usp2_title: "100% Authentic Brands",
     usp2_desc: "UltraTech, Tata Tiscon, JSW & more",
-    usp3_title: "Advance Online, Pickup Later",
-    usp3_desc: "Pay a small advance via UPI. Collect from shop.",
+    usp3_title: "Local Shop Pickup",
+    usp3_desc: "Full payment only when checkout is activated. No delivery.",
 
     featured_eyebrow: "Bestsellers",
     featured_title: "Featured Products",
@@ -88,7 +88,7 @@ const dict = {
     phone_number: "Phone Number *",
     order_notes: "Notes (optional)",
     pickup_info_title: "Pickup at our shop",
-    pickup_info_desc: "Enter your name and phone. Balance will be paid at the counter when you collect.",
+    pickup_info_desc: "Shop pickup only. Full payment in one transaction after WhatsApp verification. Payments currently paused.",
 
     // Advance payment
     advance_label: "Advance to pay now",
@@ -135,7 +135,7 @@ const dict = {
     // Quick order
     quick_order_eyebrow: "Fast Checkout",
     quick_order_title: "Quick Order",
-    quick_order_desc: "Pick items on a single page, pay advance, and collect from the shop.",
+    quick_order_desc: "Choose materials for shop pickup and save a nonpayable checkout draft. Online payments currently paused.",
     items_label: "Items",
     add_item: "Add Item",
     product_label: "Product",
@@ -150,7 +150,7 @@ const dict = {
     order_via_whatsapp: "Order via WhatsApp",
     contact: "Contact",
     whatsapp_chat: "WhatsApp Chat",
-    tagline: "Live prices and stock. Pay advance online, pickup from our local shop.",
+    tagline: "Live prices and stock. Local shop pickup only. Online payments currently paused.",
     rights: "All rights reserved.",
     cement_steel_traders: "CEMENT & STEEL TRADERS",
 
@@ -168,10 +168,10 @@ const dict = {
     admin_login: "అడ్మిన్ లాగిన్",
     quick_order_link: "త్వరిత ఆర్డర్",
 
-    hero_badge: "షాప్ పికప్ · లైవ్ ధరలు · ఆన్‌లైన్ అడ్వాన్స్",
+    hero_badge: "షాప్ పికప్ · లైవ్ ధరలు · డెలివరీ లేదు",
     hero_h1_a: "సిమెంట్, స్టీల్",
     hero_h1_b: "లైవ్ షాప్ ధరలలో.",
-    hero_desc: "నేటి ధరలు & స్టాక్ చూడండి. UPI ద్వారా అడ్వాన్స్ చెల్లించండి, మా షాప్ నుండి తీసుకోండి. సులభం, వేగవంతం, పారదర్శకం.",
+    hero_desc: "నేటి ధరలు మరియు స్టాక్ చూడండి. మా షాప్ నుండి మెటీరియల్స్ తీసుకోండి. అధికారిక WhatsApp ధృవీకరణ మరియు చెల్లింపు సేవల ఏర్పాటు వరకు ఆన్‌లైన్ చెల్లింపులు నిలిపివేయబడ్డాయి.",
     browse_catalog: "కేటలాగ్ చూడండి",
     call_shop: "షాప్ కి కాల్",
     stat_years: "సంవత్సరాలు",
@@ -188,8 +188,8 @@ const dict = {
     usp1_desc: "ధరలు రోజువారీగా అప్‌డేట్. స్టాక్ రియల్-టైమ్.",
     usp2_title: "100% ఒరిజినల్ బ్రాండ్లు",
     usp2_desc: "UltraTech, Tata Tiscon, JSW ఇంకా చాలా",
-    usp3_title: "ఆన్‌లైన్ అడ్వాన్స్, తర్వాత పికప్",
-    usp3_desc: "UPI ద్వారా చిన్న అడ్వాన్స్. షాప్ నుండి తీసుకోండి.",
+    usp3_title: "మా షాప్ నుండి పికప్",
+    usp3_desc: "చెక్‌ఔట్ ప్రారంభమైన తర్వాత పూర్తి చెల్లింపు మాత్రమే. డెలివరీ లేదు.",
 
     featured_eyebrow: "బెస్ట్ సెల్లర్స్",
     featured_title: "ఫీచర్డ్ ప్రొడక్ట్స్",
@@ -240,7 +240,7 @@ const dict = {
     phone_number: "ఫోన్ నంబర్ *",
     order_notes: "గమనికలు (ఆప్షనల్)",
     pickup_info_title: "మా షాప్ లో పికప్",
-    pickup_info_desc: "పేరు మరియు ఫోన్ ఇవ్వండి. తీసుకునేటప్పుడు షాప్ దగ్గర బ్యాలెన్స్ చెల్లించండి.",
+    pickup_info_desc: "షాప్ పికప్ మాత్రమే. WhatsApp ధృవీకరణ తర్వాత ఒకేసారి పూర్తి చెల్లింపు. ప్రస్తుతం ఆన్‌లైన్ చెల్లింపులు నిలిపివేయబడ్డాయి.",
 
     advance_label: "ఇప్పుడు చెల్లించే అడ్వాన్స్",
     balance_label: "పికప్ దగ్గర బ్యాలెన్స్",
@@ -282,7 +282,7 @@ const dict = {
 
     quick_order_eyebrow: "వేగవంతమైన చెక్‌ఔట్",
     quick_order_title: "త్వరిత ఆర్డర్",
-    quick_order_desc: "ఒకే పేజీలో అన్నీ ఎంచుకోండి, అడ్వాన్స్ చెల్లించి షాప్ నుండి తీసుకోండి.",
+    quick_order_desc: "షాప్ పికప్ కోసం మెటీరియల్స్ ఎంచుకుని డ్రాఫ్ట్ సేవ్ చేయండి. ప్రస్తుతం ఆన్‌లైన్ చెల్లింపులు నిలిపివేయబడ్డాయి.",
     items_label: "వస్తువులు",
     add_item: "వస్తువు జోడించండి",
     product_label: "ప్రొడక్ట్",
@@ -296,7 +296,7 @@ const dict = {
     order_via_whatsapp: "వాట్సాప్ ద్వారా ఆర్డర్",
     contact: "సంప్రదింపు",
     whatsapp_chat: "వాట్సాప్ చాట్",
-    tagline: "లైవ్ ధరలు మరియు స్టాక్. ఆన్‌లైన్ అడ్వాన్స్ చెల్లించి, మా లోకల్ షాప్ నుండి తీసుకోండి.",
+    tagline: "లైవ్ ధరలు మరియు స్టాక్. షాప్ పికప్ మాత్రమే. ప్రస్తుతం ఆన్‌లైన్ చెల్లింపులు నిలిపివేయబడ్డాయి.",
     rights: "అన్ని హక్కులు రక్షితం.",
     cement_steel_traders: "సిమెంట్ & స్టీల్ ట్రేడర్స్",
 

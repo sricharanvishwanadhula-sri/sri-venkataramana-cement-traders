@@ -57,6 +57,7 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <Link to="/admin" className="text-xs font-bold text-slate-200 hover:text-amber-400 transition-colors" data-testid="header-admin-login">Admin Login</Link>
           <button
             onClick={toggle}
             className="flex items-center gap-1 px-3 h-10 bg-[#1E293B] hover:bg-[#334155] rounded-md text-white text-xs font-bold uppercase tracking-wider transition"
